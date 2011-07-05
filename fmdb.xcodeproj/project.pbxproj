@@ -10,11 +10,8 @@
 		8DD76F9C0486AA7600D96B5E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 08FB779EFE84155DC02AAC07 /* Foundation.framework */; };
 		8DD76F9F0486AA7600D96B5E /* fmdb.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859EA3029092ED04C91782 /* fmdb.1 */; };
 		C7A1869B13C2B0ED00453672 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7A1869A13C2B0ED00453672 /* Foundation.framework */; };
-		C7A186A313C2B13C00453672 /* FMDatabaseAdditions.h in Sources */ = {isa = PBXBuildFile; fileRef = CC50F2CC0DF9183600E4AAAE /* FMDatabaseAdditions.h */; };
 		C7A186A413C2B13C00453672 /* FMDatabaseAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = CC50F2CB0DF9183600E4AAAE /* FMDatabaseAdditions.m */; };
-		C7A186A513C2B13C00453672 /* FMDatabase.h in Sources */ = {isa = PBXBuildFile; fileRef = CCC24EBA0A13E34D00A6D3E3 /* FMDatabase.h */; };
 		C7A186A613C2B13C00453672 /* FMDatabase.m in Sources */ = {isa = PBXBuildFile; fileRef = CCC24EBB0A13E34D00A6D3E3 /* FMDatabase.m */; };
-		C7A186A713C2B13C00453672 /* FMResultSet.h in Sources */ = {isa = PBXBuildFile; fileRef = CCC24EBF0A13E34D00A6D3E3 /* FMResultSet.h */; };
 		C7A186A813C2B13C00453672 /* FMResultSet.m in Sources */ = {isa = PBXBuildFile; fileRef = CCC24EC00A13E34D00A6D3E3 /* FMResultSet.m */; };
 		CC50F2CD0DF9183600E4AAAE /* FMDatabaseAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = CC50F2CB0DF9183600E4AAAE /* FMDatabaseAdditions.m */; };
 		CCBEBDAC0DF5DE1A003DDD08 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = CCBEBDAB0DF5DE1A003DDD08 /* libsqlite3.dylib */; };
@@ -303,11 +300,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C7A186A313C2B13C00453672 /* FMDatabaseAdditions.h in Sources */,
 				C7A186A413C2B13C00453672 /* FMDatabaseAdditions.m in Sources */,
-				C7A186A513C2B13C00453672 /* FMDatabase.h in Sources */,
 				C7A186A613C2B13C00453672 /* FMDatabase.m in Sources */,
-				C7A186A713C2B13C00453672 /* FMResultSet.h in Sources */,
 				C7A186A813C2B13C00453672 /* FMResultSet.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -473,6 +467,7 @@
 				C7A186A013C2B0ED00453672 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		EE42910012B42FA00088BD94 /* Build configuration list for PBXNativeTarget "FMDB" */ = {
 			isa = XCConfigurationList;
