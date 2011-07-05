@@ -16,6 +16,9 @@
     BOOL        shouldCacheStatements;
     NSMutableDictionary *cachedStatements;
 	NSMutableSet *openResultSets;
+    NSNumber*   lookasideBufferSize;
+    NSNumber*   lookasideBufferCount;
+    NSNumber*   numCachePages;
 }
 
 
@@ -26,6 +29,9 @@
 @property (assign) BOOL crashOnErrors;
 @property (assign) BOOL logsErrors;
 @property (retain) NSMutableDictionary *cachedStatements;
+@property (retain) NSNumber*   lookasideBufferSize;
+@property (retain) NSNumber*   lookasideBufferCount;
+@property (retain) NSNumber*   numCachePages;
 
 
 + (id)databaseWithPath:(NSString*)inPath;
@@ -80,6 +86,10 @@
 
 + (BOOL)isThreadSafe;
 + (NSString*)sqliteLibVersion;
+
++ (void) setDefaultLookasideBufferSize:(NSNumber*)size;
++ (void) setDefaultLookasideBufferCount:(NSNumber*)count;
++ (void) setDefaultNumCachePages:(NSNumber*)pages;
 
 - (int)changes;
 

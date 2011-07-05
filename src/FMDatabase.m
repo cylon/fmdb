@@ -1,6 +1,10 @@
 #import "FMDatabase.h"
 #import "unistd.h"
 
+static NSNumber*   sLookasideBufferSize = nil;
+static NSNumber*   sLookasideBufferCount = nil;
+static NSNumber*   sNumCachePages = nil;
+
 @implementation FMDatabase
 @synthesize inTransaction;
 @synthesize cachedStatements;
@@ -9,6 +13,9 @@
 @synthesize busyRetryTimeout;
 @synthesize checkedOut;
 @synthesize traceExecution;
+@synthesize lookasideBufferSize;
+@synthesize lookasideBufferCount;
+@synthesize numCachePages;
 
 + (id)databaseWithPath:(NSString*)aPath {
     return [[[self alloc] initWithPath:aPath] autorelease];
@@ -18,12 +25,15 @@
     self = [super init];
     
     if (self) {
-        databasePath        = [aPath copy];
-        openResultSets      = [[NSMutableSet alloc] init];
-        db                  = 0x00;
-        logsErrors          = 0x00;
-        crashOnErrors       = 0x00;
-        busyRetryTimeout    = 0x00;
+        databasePath         = [aPath copy];
+        openResultSets       = [[NSMutableSet alloc] init];
+        db                   = 0x00;
+        logsErrors           = 0x00;
+        crashOnErrors        = 0x00;
+        busyRetryTimeout     = 0x00;
+        lookasideBufferSize  = nil;
+        lookasideBufferCount = nil;
+        numCachePages        = nil;
     }
     
     return self;
@@ -40,6 +50,8 @@
     [openResultSets release];
     [cachedStatements release];
     [databasePath release];
+    [lookasideBufferSize release];
+    [lookasideBufferCount release];
     
     [super dealloc];
 }
@@ -56,6 +68,20 @@
     return db;
 }
 
+- (void)updateDbSettings {
+    NSNumber* count = lookasideBufferCount ? lookasideBufferCount : sLookasideBufferCount;
+    NSNumber* size = lookasideBufferSize ? lookasideBufferSize : sLookasideBufferSize;
+    
+    if(count && size) {
+        sqlite3_db_config(db, SQLITE_DBCONFIG_LOOKASIDE, NULL, [size intValue], [count intValue]);
+    }
+    
+    NSNumber* pages = numCachePages ? numCachePages : sNumCachePages;
+    if (pages) {
+        sqlite3_exec(db, [@"PRAGMA cache_size=1;" cStringUsingEncoding:NSUTF8StringEncoding], NULL, NULL, NULL);
+    }
+}
+
 - (BOOL)open {
     if (db) {
         return YES;
@@ -67,6 +93,8 @@
         return NO;
     }
     
+    [self updateDbSettings];
+    
     return YES;
 }
 
@@ -77,6 +105,9 @@
         NSLog(@"error opening!: %d", err);
         return NO;
     }
+    
+    [self updateDbSettings];
+    
     return YES;
 }
 #endif
@@ -873,6 +904,33 @@
 + (BOOL)isThreadSafe {
     // make sure to read the sqlite headers on this guy!
     return sqlite3_threadsafe();
+}
+
++ (void) setDefaultLookasideBufferSize:(NSNumber*)size {
+    if (sLookasideBufferSize) {
+        [sLookasideBufferSize release];
+        sLookasideBufferSize = nil;
+    }
+    
+    sLookasideBufferSize = [size retain];
+}
+
++ (void) setDefaultLookasideBufferCount:(NSNumber*)count {
+    if (sLookasideBufferCount) {
+        [sLookasideBufferCount release];
+        sLookasideBufferCount = nil;
+    }
+    
+    sLookasideBufferCount = [count retain];
+}
+
++ (void) setDefaultNumCachePages:(NSNumber*)pages {
+    if (sNumCachePages) {
+        [sNumCachePages release];
+        sNumCachePages = nil;
+    }
+    
+    sNumCachePages = [pages retain];
 }
 
 @end
