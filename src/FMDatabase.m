@@ -78,7 +78,7 @@ static NSNumber*   sNumCachePages = nil;
     
     NSNumber* pages = numCachePages ? numCachePages : sNumCachePages;
     if (pages) {
-        sqlite3_exec(db, [@"PRAGMA cache_size=1;" cStringUsingEncoding:NSUTF8StringEncoding], NULL, NULL, NULL);
+        sqlite3_exec(db, [[NSString stringWithFormat:@"PRAGMA cache_size=%@;", pages] cStringUsingEncoding:NSUTF8StringEncoding], NULL, NULL, NULL);
     }
 }
 
