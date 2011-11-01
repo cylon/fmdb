@@ -76,6 +76,7 @@
 - (BOOL)commit;
 - (BOOL)beginTransaction;
 - (BOOL)beginDeferredTransaction;
+- (BOOL)beginImmediateTransaction;
 
 - (BOOL)inUse;
 - (void)setInUse:(BOOL)value;

@@ -865,6 +865,14 @@ static NSNumber*   sNumCachePages = nil;
     return b;
 }
 
+- (BOOL)beginImmediateTransaction {
+    BOOL b =  [self executeUpdate:@"BEGIN IMMEDIATE TRANSACTION;"];
+    if (b) {
+        inTransaction = YES;
+    }
+    return b;
+}
+
 - (BOOL)beginTransaction {
     BOOL b =  [self executeUpdate:@"BEGIN EXCLUSIVE TRANSACTION;"];
     if (b) {
