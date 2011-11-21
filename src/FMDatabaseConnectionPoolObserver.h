@@ -8,6 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
-@protocol FMDatabaseConnectionPoolObserver <NSObject>
+@class FMDatabaseConnectionPool;
 
+@protocol FMDatabaseConnectionPoolObserver <NSObject>
+-(void)corruptionOccurredInPool:(FMDatabaseConnectionPool*)pool;
 @end

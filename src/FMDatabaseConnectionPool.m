@@ -10,10 +10,14 @@
 
 #import "FMDatabase.h"
 #import <sqlite3.h>
-
+#import "FMDatabaseConnectionPoolObserver.h"
 
 const NSUInteger kFMDatabaseConnectionPoolInfiniteConnections = UINT_MAX;
 const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
+
+static const NSUInteger DEFAULT_MIN_CONNECTIONS = 1;
+static const NSTimeInterval DEFAULT_TIME_TO_LIVE = 5;
+static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
 
 @interface FMDatabaseConnectionPoolDatabase : FMDatabase {
 @private
@@ -41,6 +45,7 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
 
 -(void)dealloc
 {
+    
     [creationTime release];
     [super dealloc];
 }
@@ -52,13 +57,14 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
 @end
 
 @implementation FMDatabaseConnectionPool
+@synthesize shouldCacheStatements;
+@synthesize minimumCachedConnections;
+@synthesize connectionTimeToLive;
+@synthesize enableSharedCacheMode;
+@synthesize delegate;
 
 -(id)initWithDatabasePath:(NSString*)thePath
                 openFlags:(NSNumber*)theOpenFlags
-    shouldCacheStatements:(BOOL)cacheStatements
- minimumCachedConnections:(int)theMinimumCachedConnections
-     connectionTimeToLive:(NSTimeInterval)theTimeToLive
-    enableSharedCacheMode:(BOOL)enableSharedCacheMode
 {
     self = [super init];
     
@@ -66,11 +72,12 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
     {
         databasePath = [thePath copy];
         openFlags = [theOpenFlags retain];
-        minimumCachedConnections = theMinimumCachedConnections;
-        connectionTTL = theTimeToLive;
-        sharedCacheModeEnabled = enableSharedCacheMode;
-        shouldCacheStatements = cacheStatements;
+        minimumCachedConnections = DEFAULT_MIN_CONNECTIONS;
+        connectionTimeToLive = DEFAULT_TIME_TO_LIVE;
+        sharedCacheModeEnabled = NO;
+        shouldCacheStatements = DEFAULT_SHOULD_CACHE_STATEMENTS;
         checkedOutConnections = [[NSMutableArray alloc] init];
+        observers = [[NSMutableArray alloc] init];
         
         if (enableSharedCacheMode)
         {
@@ -81,7 +88,7 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
             connections = [[NSMutableArray alloc] init];
         }
         
-        if (kFMDatabaseConnectionPoolInfiniteTimeToLive != theTimeToLive)
+        if (kFMDatabaseConnectionPoolInfiniteTimeToLive != connectionTimeToLive)
         {
             cleanupQueue = dispatch_queue_create("fmdatabase.connection_cleanup", NULL);
             cleanupSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,
@@ -93,10 +100,10 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
             });
             
             
-            uint64_t interval = theTimeToLive * NSEC_PER_SEC; // Change to nanoseconds
+            uint64_t interval = connectionTimeToLive * NSEC_PER_SEC; // Change to nanoseconds
             
             dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW,
-                                                      theTimeToLive);
+                                                      interval);
             
             
             // Give a leeway of 2/3 the interval time to allow for room when the
@@ -123,6 +130,7 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
         dispatch_release(cleanupSource);
         dispatch_release(cleanupQueue);
     }
+    [observers release];
     [checkedOutConnections release];
     [connections release];
     [threadConnections release];
@@ -130,6 +138,20 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
     [databasePath release];
     
     [super dealloc];
+}
+
+-(void)setConnectionTimeToLive:(NSTimeInterval)aConnectionTimeToLive
+{
+    connectionTimeToLive = aConnectionTimeToLive;
+    
+    uint64_t interval = aConnectionTimeToLive * NSEC_PER_SEC; // Change to nanoseconds
+    
+    dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, interval);
+    
+    dispatch_source_set_timer(cleanupSource,
+                              startTime,
+                              interval,
+                              (interval*2)/3);
 }
 
 -(BOOL)openDatabase:(FMDatabase*)db
@@ -176,10 +198,26 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
         
         if ([self openDatabase:temp])
         {
+            [delegate databaseConnectionCreated:temp];
             retval = temp;
         }
         else
         {
+            int rc = [temp lastErrorCode];
+            if ((SQLITE_CORRUPT == rc) || (SQLITE_CORRUPT_VTAB == rc))
+            {
+                @synchronized(observers)
+                {
+                    NSArray* copy = [observers copy];
+                    
+                    for (id<FMDatabaseConnectionPoolObserver> observer in copy)
+                    {
+                        [observer corruptionOccurredInPool:self];
+                    }
+                    
+                    [copy release];
+                }
+            }
             [temp release];
         }
     }
@@ -187,7 +225,7 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
     if (nil != retval)
     {
         [checkedOutConnections addObject:retval];
-        [retval release];
+        [retval autorelease];
     }
     
     return retval;
@@ -197,8 +235,8 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
 {
     BOOL retval = NO;
     
-    if ((kFMDatabaseConnectionPoolInfiniteTimeToLive == connectionTTL) ||
-        (connectionTTL > [[NSDate date] timeIntervalSinceDate:db.creationTime]))
+    if ((kFMDatabaseConnectionPoolInfiniteTimeToLive == connectionTimeToLive) ||
+        (connectionTimeToLive > [[NSDate date] timeIntervalSinceDate:db.creationTime]))
     {
         retval = YES;
     }
@@ -268,6 +306,8 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
 {
     @synchronized(self)
     {
+        [checkedOutConnections removeAllObjects];
+        
         if (nil != connections)
         {
             [connections removeAllObjects];
@@ -279,15 +319,20 @@ const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
     }
 }
 
--(BOOL)isDatabaseOk
+-(void)addConnectionPoolObserver:(id<FMDatabaseConnectionPoolObserver>)observer
 {
-    BOOL retval = NO;
-    
-    FMDatabase* db = [self checkoutConnection];
-    retval = [db goodConnection];
-    [self checkinConnection:db];
-    
-    return retval;
+    @synchronized(observers)
+    {
+        [observers addObject:observer];
+    }
+}
+
+-(void)removeConnectionPoolObserver:(id<FMDatabaseConnectionPoolObserver>)observer
+{
+    @synchronized(observers)
+    {
+        [observers removeObject:observer];
+    }
 }
 
 @end

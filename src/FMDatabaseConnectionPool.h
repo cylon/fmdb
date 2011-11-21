@@ -11,9 +11,16 @@
 #import "FMDatabaseConnectionPooling.h"
 
 @class FMDatabase;
+@protocol FMDatabaseConnectionPoolObserver;
 
 extern const NSUInteger kFMDatabaseConnectionPoolInfiniteConnections;
 extern const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive;
+
+@protocol FMDatabaseConnectionPoolDelegate <NSObject>
+
+-(void)databaseConnectionCreated:(FMDatabase*)connection;
+
+@end
 
 @interface FMDatabaseConnectionPool : NSObject<FMDatabaseConnectionPooling>
 {
@@ -23,20 +30,29 @@ extern const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive;
     NSString* databasePath;
     NSNumber* openFlags;
     NSUInteger minimumCachedConnections;
-    NSTimeInterval connectionTTL;
+    NSTimeInterval connectionTimeToLive;
     BOOL sharedCacheModeEnabled;
     BOOL shouldCacheStatements;
     dispatch_queue_t cleanupQueue;
     dispatch_source_t cleanupSource;
+    
+    id<FMDatabaseConnectionPoolDelegate> delegate;
+    
+    NSMutableArray* observers;
 }
 
+@property (nonatomic) BOOL shouldCacheStatements;
+@property (nonatomic) NSUInteger minimumCachedConnections;
+@property (nonatomic) NSTimeInterval connectionTimeToLive;
+@property (nonatomic) BOOL enableSharedCacheMode;
+@property (nonatomic,assign) id<FMDatabaseConnectionPoolDelegate> delegate;
+
 -(id)initWithDatabasePath:(NSString*)thePath
-                openFlags:(NSNumber*)theOpenFlags
-    shouldCacheStatements:(BOOL)cacheStatements
- minimumCachedConnections:(int)theMinimumCachedConnections
-     connectionTimeToLive:(NSTimeInterval)theTimeToLive
-    enableSharedCacheMode:(BOOL)enableSharedCacheMode;
+                openFlags:(NSNumber*)theOpenFlags;
 
 -(void)releaseConnections;
+
+-(void)addConnectionPoolObserver:(id<FMDatabaseConnectionPoolObserver>)observer;
+-(void)removeConnectionPoolObserver:(id<FMDatabaseConnectionPoolObserver>)observer;
 
 @end

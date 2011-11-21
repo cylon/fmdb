@@ -14,6 +14,5 @@
 
 -(FMDatabase*)checkoutConnection;
 -(void)checkinConnection:(FMDatabase*)connection;
--(BOOL)isDatabaseOk;
 
 @end
