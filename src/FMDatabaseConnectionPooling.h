@@ -9,10 +9,14 @@
 #import <Foundation/Foundation.h>
 
 @class FMDatabase;
+@protocol FMDatabaseConnectionPoolObserver;
 
 @protocol FMDatabaseConnectionPooling <NSObject>
 
 -(FMDatabase*)checkoutConnection;
 -(void)checkinConnection:(FMDatabase*)connection;
+
+-(void)addConnectionPoolObserver:(id<FMDatabaseConnectionPoolObserver>)observer;
+-(void)removeConnectionPoolObserver:(id<FMDatabaseConnectionPoolObserver>)observer;
 
 @end

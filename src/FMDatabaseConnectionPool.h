@@ -50,7 +50,4 @@ extern const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive;
 
 -(void)releaseConnections;
 
--(void)addConnectionPoolObserver:(id<FMDatabaseConnectionPoolObserver>)observer;
--(void)removeConnectionPoolObserver:(id<FMDatabaseConnectionPoolObserver>)observer;
-
 @end
