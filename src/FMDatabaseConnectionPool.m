@@ -158,7 +158,6 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
         {
             [delegate databaseConnectionCreated:temp];
             retval = temp;
-            [retval setTraceExecution:<#(BOOL)#>
         }
         else
         {
