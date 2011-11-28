@@ -134,10 +134,13 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
     {
         if (nil != connections)
         {
-            retval = [[connections lastObject] retain];
-            if (nil != retval)
+            if (0 < [connections count])
             {
-                [connections removeLastObject];
+                retval = [[connections lastObject] retain];
+                if (nil != retval)
+                {
+                    [connections removeLastObject];
+                }
             }
         }
         else
@@ -155,6 +158,7 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
         {
             [delegate databaseConnectionCreated:temp];
             retval = temp;
+            [retval setTraceExecution:<#(BOOL)#>
         }
         else
         {
