@@ -33,8 +33,6 @@ extern const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive;
     NSTimeInterval connectionTimeToLive;
     BOOL sharedCacheModeEnabled;
     BOOL shouldCacheStatements;
-    dispatch_queue_t cleanupQueue;
-    dispatch_source_t cleanupSource;
     
     id<FMDatabaseConnectionPoolDelegate> delegate;
     
@@ -44,7 +42,7 @@ extern const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive;
 @property (nonatomic) BOOL shouldCacheStatements;
 @property (nonatomic) NSUInteger minimumCachedConnections;
 @property (nonatomic) NSTimeInterval connectionTimeToLive;
-@property (nonatomic) BOOL enableSharedCacheMode;
+@property (nonatomic) BOOL sharedCacheModeEnabled;
 @property (nonatomic,assign) id<FMDatabaseConnectionPoolDelegate> delegate;
 
 -(id)initWithDatabasePath:(NSString*)thePath

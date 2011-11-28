@@ -60,7 +60,7 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
 @synthesize shouldCacheStatements;
 @synthesize minimumCachedConnections;
 @synthesize connectionTimeToLive;
-@synthesize enableSharedCacheMode;
+@synthesize sharedCacheModeEnabled;
 @synthesize delegate;
 
 -(id)initWithDatabasePath:(NSString*)thePath
@@ -79,43 +79,13 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
         checkedOutConnections = [[NSMutableArray alloc] init];
         observers = [[NSMutableArray alloc] init];
         
-        if (enableSharedCacheMode)
+        if (sharedCacheModeEnabled)
         {
             threadConnections = [[NSMutableDictionary alloc] init];
         }
         else
         {
             connections = [[NSMutableArray alloc] init];
-        }
-        
-        if (kFMDatabaseConnectionPoolInfiniteTimeToLive != connectionTimeToLive)
-        {
-            cleanupQueue = dispatch_queue_create("fmdatabase.connection_cleanup", NULL);
-            cleanupSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,
-                                                   (uintptr_t)0,
-                                                   0,
-                                                   cleanupQueue);
-            dispatch_source_set_event_handler(cleanupSource, ^{
-                [self cleanupOldConnections];
-            });
-            
-            
-            uint64_t interval = connectionTimeToLive * NSEC_PER_SEC; // Change to nanoseconds
-            
-            dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW,
-                                                      interval);
-            
-            
-            // Give a leeway of 2/3 the interval time to allow for room when the
-            // app is in the background.  The smaller the leeway, the more strict
-            // the policy about when to service the timer if the fire time happened
-            // while the app was in the background or the device asleep.
-            dispatch_source_set_timer(cleanupSource,
-                                      startTime,
-                                      interval,
-                                      (interval*2)/3);
-            
-            dispatch_resume(cleanupSource);
         }
     }
     
@@ -124,12 +94,6 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
 
 -(void)dealloc
 {
-    if (NULL != cleanupQueue)
-    {
-        dispatch_source_cancel(cleanupSource);
-        dispatch_release(cleanupSource);
-        dispatch_release(cleanupQueue);
-    }
     [observers release];
     [checkedOutConnections release];
     [connections release];
@@ -143,15 +107,6 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
 -(void)setConnectionTimeToLive:(NSTimeInterval)aConnectionTimeToLive
 {
     connectionTimeToLive = aConnectionTimeToLive;
-    
-    uint64_t interval = aConnectionTimeToLive * NSEC_PER_SEC; // Change to nanoseconds
-    
-    dispatch_time_t startTime = dispatch_time(DISPATCH_TIME_NOW, interval);
-    
-    dispatch_source_set_timer(cleanupSource,
-                              startTime,
-                              interval,
-                              (interval*2)/3);
 }
 
 -(BOOL)openDatabase:(FMDatabase*)db
@@ -204,7 +159,7 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
         else
         {
             int rc = [temp lastErrorCode];
-            if ((SQLITE_CORRUPT == rc) || (SQLITE_CORRUPT_VTAB == rc))
+            if ((SQLITE_CORRUPT == rc))// || (SQLITE_CORRUPT_VTAB == rc))
             {
                 @synchronized(observers)
                 {
@@ -235,7 +190,7 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
 {
     BOOL retval = NO;
     
-    if ((kFMDatabaseConnectionPoolInfiniteTimeToLive == connectionTimeToLive) ||
+    if ((0 > connectionTimeToLive) ||
         (connectionTimeToLive > [[NSDate date] timeIntervalSinceDate:db.creationTime]))
     {
         retval = YES;
@@ -256,11 +211,22 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
             {
                 if (nil != connections)
                 {
+                    const NSUInteger count = [connections count];
+                    BOOL shouldStartTimer = (0 == count) && (0 < connectionTimeToLive);
+                    
                     if (((kFMDatabaseConnectionPoolInfiniteConnections == minimumCachedConnections) ||
-                         (minimumCachedConnections > [connections count])) &&
+                         (minimumCachedConnections > count)) &&
                         [self isConnectionGood:internalConnection])
                     {
                         [connections addObject:connection];
+                        
+                        if (shouldStartTimer)
+                        {
+                            dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, connectionTimeToLive * NSEC_PER_SEC);
+                            dispatch_after(popTime, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^(void){
+                                [self cleanupOldConnections];
+                            });
+                        }
                     }
                 }
                 else
@@ -287,10 +253,17 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
             {
                 if (![self isConnectionGood:db])
                 {
-                    NSLog(@"Removing connection to %@ %d left", [db databasePath], [connections count] -1);
                     [db close];
                     [connections removeObject:db];
                 }
+            }
+            
+            if ((0 < [connections count]) && (0 < connectionTimeToLive))
+            {
+                dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, connectionTimeToLive * NSEC_PER_SEC);
+                dispatch_after(popTime, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_LOW, 0), ^(void){
+                    [self cleanupOldConnections];
+                });
             }
             
             [tempConnections release];
