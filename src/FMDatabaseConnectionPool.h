@@ -11,7 +11,6 @@
 #import "FMDatabaseConnectionPooling.h"
 
 @class FMDatabase;
-@protocol FMDatabaseConnectionPoolObserver;
 
 extern const NSUInteger kFMDatabaseConnectionPoolInfiniteConnections;
 extern const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive;
@@ -19,10 +18,17 @@ extern const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive;
 @protocol FMDatabaseConnectionPoolDelegate <NSObject>
 
 -(void)databaseConnectionCreated:(FMDatabase*)connection;
+-(void)databaseCorruptionOccurredInPool:(id<FMDatabaseConnectionPooling>)pool;
 
 @end
 
-@interface FMDatabaseConnectionPool : NSObject<FMDatabaseConnectionPooling>
+@protocol FMDatabaseConnectionPool <FMDatabaseConnectionPooling>
+
+@property (nonatomic,assign) id<FMDatabaseConnectionPoolDelegate> delegate;
+
+@end
+
+@interface FMDatabaseConnectionPool : NSObject<FMDatabaseConnectionPool>
 {
     NSMutableArray* checkedOutConnections;
     NSMutableArray* connections;
@@ -35,15 +41,12 @@ extern const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive;
     BOOL shouldCacheStatements;
     
     id<FMDatabaseConnectionPoolDelegate> delegate;
-    
-    NSMutableArray* observers;
 }
 
 @property (nonatomic) BOOL shouldCacheStatements;
 @property (nonatomic) NSUInteger minimumCachedConnections;
 @property (nonatomic) NSTimeInterval connectionTimeToLive;
 @property (nonatomic) BOOL sharedCacheModeEnabled;
-@property (nonatomic,assign) id<FMDatabaseConnectionPoolDelegate> delegate;
 
 -(id)initWithDatabasePath:(NSString*)thePath
                 openFlags:(NSNumber*)theOpenFlags;

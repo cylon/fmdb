@@ -10,7 +10,6 @@
 
 #import "FMDatabase.h"
 #import <sqlite3.h>
-#import "FMDatabaseConnectionPoolObserver.h"
 
 const NSUInteger kFMDatabaseConnectionPoolInfiniteConnections = UINT_MAX;
 const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive = -1;
@@ -77,7 +76,6 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
         sharedCacheModeEnabled = NO;
         shouldCacheStatements = DEFAULT_SHOULD_CACHE_STATEMENTS;
         checkedOutConnections = [[NSMutableArray alloc] init];
-        observers = [[NSMutableArray alloc] init];
         
         if (sharedCacheModeEnabled)
         {
@@ -94,7 +92,6 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
 
 -(void)dealloc
 {
-    [observers release];
     [checkedOutConnections release];
     [connections release];
     [threadConnections release];
@@ -164,16 +161,9 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
             int rc = [temp lastErrorCode];
             if ((SQLITE_CORRUPT == rc))// || (SQLITE_CORRUPT_VTAB == rc))
             {
-                @synchronized(observers)
+                @synchronized(delegate)
                 {
-                    NSArray* copy = [observers copy];
-                    
-                    for (id<FMDatabaseConnectionPoolObserver> observer in copy)
-                    {
-                        [observer corruptionOccurredInPool:self];
-                    }
-                    
-                    [copy release];
+                    [delegate databaseCorruptionOccurredInPool:self];
                 }
             }
             [temp release];
@@ -292,22 +282,6 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
         {
             [threadConnections removeAllObjects];
         }
-    }
-}
-
--(void)addConnectionPoolObserver:(id<FMDatabaseConnectionPoolObserver>)observer
-{
-    @synchronized(observers)
-    {
-        [observers addObject:observer];
-    }
-}
-
--(void)removeConnectionPoolObserver:(id<FMDatabaseConnectionPoolObserver>)observer
-{
-    @synchronized(observers)
-    {
-        [observers removeObject:observer];
     }
 }
 

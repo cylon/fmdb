@@ -14,8 +14,6 @@
 		C732ABEF147389C9009753C8 /* FMDatabaseConnectionPool.m in Sources */ = {isa = PBXBuildFile; fileRef = C732ABEB147389C9009753C8 /* FMDatabaseConnectionPool.m */; };
 		C732ABF0147389C9009753C8 /* FMDatabaseConnectionPool.m in Sources */ = {isa = PBXBuildFile; fileRef = C732ABEB147389C9009753C8 /* FMDatabaseConnectionPool.m */; };
 		C732ABF1147389C9009753C8 /* FMDatabaseConnectionPool.m in Sources */ = {isa = PBXBuildFile; fileRef = C732ABEB147389C9009753C8 /* FMDatabaseConnectionPool.m */; };
-		C732ABF2147389C9009753C8 /* FMDatabaseConnectionPoolObserver.h in Headers */ = {isa = PBXBuildFile; fileRef = C732ABEC147389C9009753C8 /* FMDatabaseConnectionPoolObserver.h */; };
-		C732ABF3147389C9009753C8 /* FMDatabaseConnectionPoolObserver.h in Headers */ = {isa = PBXBuildFile; fileRef = C732ABEC147389C9009753C8 /* FMDatabaseConnectionPoolObserver.h */; };
 		C732ABF714738AB3009753C8 /* FMDatabaseConnectionPooling.h in Headers */ = {isa = PBXBuildFile; fileRef = C732ABF614738AB3009753C8 /* FMDatabaseConnectionPooling.h */; };
 		C732ABF814738AB3009753C8 /* FMDatabaseConnectionPooling.h in Headers */ = {isa = PBXBuildFile; fileRef = C732ABF614738AB3009753C8 /* FMDatabaseConnectionPooling.h */; };
 		C7A1869B13C2B0ED00453672 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7A1869A13C2B0ED00453672 /* Foundation.framework */; };
@@ -61,7 +59,6 @@
 		C6859EA3029092ED04C91782 /* fmdb.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = fmdb.1; sourceTree = "<group>"; };
 		C732ABEA147389C9009753C8 /* FMDatabaseConnectionPool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FMDatabaseConnectionPool.h; path = src/FMDatabaseConnectionPool.h; sourceTree = "<group>"; };
 		C732ABEB147389C9009753C8 /* FMDatabaseConnectionPool.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = FMDatabaseConnectionPool.m; path = src/FMDatabaseConnectionPool.m; sourceTree = "<group>"; };
-		C732ABEC147389C9009753C8 /* FMDatabaseConnectionPoolObserver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FMDatabaseConnectionPoolObserver.h; path = src/FMDatabaseConnectionPoolObserver.h; sourceTree = "<group>"; };
 		C732ABF614738AB3009753C8 /* FMDatabaseConnectionPooling.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FMDatabaseConnectionPooling.h; path = src/FMDatabaseConnectionPooling.h; sourceTree = "<group>"; };
 		C7A1869813C2B0ED00453672 /* libFMDB_ios.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libFMDB_ios.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		C7A1869A13C2B0ED00453672 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -135,7 +132,6 @@
 			children = (
 				C732ABEA147389C9009753C8 /* FMDatabaseConnectionPool.h */,
 				C732ABEB147389C9009753C8 /* FMDatabaseConnectionPool.m */,
-				C732ABEC147389C9009753C8 /* FMDatabaseConnectionPoolObserver.h */,
 				CC50F2CC0DF9183600E4AAAE /* FMDatabaseAdditions.h */,
 				CC50F2CB0DF9183600E4AAAE /* FMDatabaseAdditions.m */,
 				CCC24EBA0A13E34D00A6D3E3 /* FMDatabase.h */,
@@ -208,7 +204,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				C732ABEE147389C9009753C8 /* FMDatabaseConnectionPool.h in Headers */,
-				C732ABF3147389C9009753C8 /* FMDatabaseConnectionPoolObserver.h in Headers */,
 				C732ABF814738AB3009753C8 /* FMDatabaseConnectionPooling.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -221,7 +216,6 @@
 				EE42910612B42FC30088BD94 /* FMDatabaseAdditions.h in Headers */,
 				EE42910912B42FD00088BD94 /* FMResultSet.h in Headers */,
 				C732ABED147389C9009753C8 /* FMDatabaseConnectionPool.h in Headers */,
-				C732ABF2147389C9009753C8 /* FMDatabaseConnectionPoolObserver.h in Headers */,
 				C732ABF714738AB3009753C8 /* FMDatabaseConnectionPooling.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
