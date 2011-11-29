@@ -18,7 +18,7 @@ extern const NSTimeInterval kFMDatabaseConnectionPoolInfiniteTimeToLive;
 @protocol FMDatabaseConnectionPoolDelegate <NSObject>
 
 -(void)databaseConnectionCreated:(FMDatabase*)connection;
--(void)databaseCorruptionOccurredInPool:(id<FMDatabaseConnectionPooling>)pool;
+-(void)databaseCorruptionOccurred:(FMDatabase*)connection;
 
 @end
 

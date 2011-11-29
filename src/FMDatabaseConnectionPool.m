@@ -163,7 +163,7 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
             {
                 @synchronized(delegate)
                 {
-                    [delegate databaseCorruptionOccurredInPool:self];
+                    [delegate databaseCorruptionOccurred:temp];
                 }
             }
             [temp release];
