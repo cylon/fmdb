@@ -61,6 +61,7 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
 @synthesize connectionTimeToLive;
 @synthesize sharedCacheModeEnabled;
 @synthesize delegate;
+@synthesize dbPath=databasePath;
 
 -(id)initWithDatabasePath:(NSString*)thePath
                 openFlags:(NSNumber*)theOpenFlags
@@ -163,7 +164,7 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
             {
                 @synchronized(delegate)
                 {
-                    [delegate databaseCorruptionOccurred:temp];
+                    [delegate databaseCorruptionOccurred:self];
                 }
             }
             [temp release];

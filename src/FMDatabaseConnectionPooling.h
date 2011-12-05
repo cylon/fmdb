@@ -15,4 +15,6 @@
 -(FMDatabase*)checkoutConnection;
 -(void)checkinConnection:(FMDatabase*)connection;
 
+@property(nonatomic,readonly) NSString* dbPath;
+
 @end
