@@ -132,14 +132,24 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
     {
         if (nil != connections)
         {
-            if (0 < [connections count])
+            do
             {
-                retval = [[connections lastObject] retain];
-                if (nil != retval)
+                if (0 < [connections count])
                 {
+                    retval = [[connections lastObject] retain];
                     [connections removeLastObject];
+                    if (![retval goodConnection])
+                    {
+                        [retval release];
+                        retval = nil;
+                    }
+                }
+                else
+                {
+                    break;
                 }
             }
+            while (nil != retval);
         }
         else
         {
@@ -184,8 +194,9 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
 {
     BOOL retval = NO;
     
-    if ((0 > connectionTimeToLive) ||
-        (connectionTimeToLive > [[NSDate date] timeIntervalSinceDate:db.creationTime]))
+    if ([db goodConnection] &&
+        ((0 > connectionTimeToLive) ||
+        (connectionTimeToLive > [[NSDate date] timeIntervalSinceDate:db.creationTime])))
     {
         retval = YES;
     }
@@ -221,6 +232,10 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
                                 [self cleanupOldConnections];
                             });
                         }
+                    }
+                    else
+                    {
+                        [connection close];
                     }
                 }
                 else
