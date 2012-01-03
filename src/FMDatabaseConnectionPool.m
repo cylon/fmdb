@@ -172,10 +172,7 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
             int rc = [temp lastErrorCode];
             if ((SQLITE_CORRUPT == rc))// || (SQLITE_CORRUPT_VTAB == rc))
             {
-                @synchronized(delegate)
-                {
-                    [delegate databaseCorruptionOccurred:self];
-                }
+                [delegate databaseCorruptionOccurred:self];
             }
             [temp release];
         }
@@ -183,8 +180,11 @@ static const BOOL DEFAULT_SHOULD_CACHE_STATEMENTS = YES;
     
     if (nil != retval)
     {
-        [checkedOutConnections addObject:retval];
-        [retval autorelease];
+        @synchronized(self)
+        {
+            [checkedOutConnections addObject:retval];
+            [retval autorelease];
+        }
     }
     
     return retval;
