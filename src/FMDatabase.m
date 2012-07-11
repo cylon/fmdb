@@ -699,6 +699,15 @@ static NSNumber*   sNumCachePages = nil;
     id obj;
     int idx = 0;
     int queryCount = sqlite3_bind_parameter_count(pStmt);
+
+#ifndef DEBUG
+        if (nil != arrayArgs && queryCount != (int)[arrayArgs count]) {
+            NSLog(@"Error: the query param count is not correct for the # of variables (%@) (executeUpdate)", sql);
+            sqlite3_finalize(pStmt);
+            [self setInUse:NO];
+            return NO;
+        }  
+#endif
     
     while (idx < queryCount) {
         
