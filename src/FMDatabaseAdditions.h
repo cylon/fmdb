@@ -11,10 +11,10 @@
 
 
 - (int)intForQuery:(NSString*)objs, ...;
-- (long)longForQuery:(NSString*)objs, ...; 
+- (long)longForQuery:(NSString*)objs, ...;
 - (BOOL)boolForQuery:(NSString*)objs, ...;
 - (double)doubleForQuery:(NSString*)objs, ...;
-- (NSString*)stringForQuery:(NSString*)objs, ...; 
+- (NSString*)stringForQuery:(NSString*)objs, ...;
 - (NSData*)dataForQuery:(NSString*)objs, ...;
 - (NSDate*)dateForQuery:(NSString*)objs, ...;
 
@@ -26,8 +26,22 @@
 - (BOOL)tableExists:(NSString*)tableName;
 - (FMResultSet*)getSchema;
 - (FMResultSet*)getTableSchema:(NSString*)tableName;
-- (BOOL)columnExists:(NSString*)tableName columnName:(NSString*)columnName;
+
+- (BOOL)columnExists:(NSString*)columnName inTableWithName:(NSString*)tableName;
 
 - (BOOL)validateSQL:(NSString*)sql error:(NSError**)error;
+
+
+#if SQLITE_VERSION_NUMBER >= 3007017
+- (uint32_t)applicationID;
+- (void)setApplicationID:(uint32_t)appID;
+
+- (NSString*)applicationIDString;
+- (void)setApplicationIDString:(NSString*)s;
+#endif
+
+
+// deprecated - use columnExists:inTableWithName: instead.
+- (BOOL)columnExists:(NSString*)tableName columnName:(NSString*)columnName __attribute__ ((deprecated));
 
 @end

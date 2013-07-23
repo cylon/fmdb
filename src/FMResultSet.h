@@ -17,17 +17,16 @@
 @class FMStatement;
 
 @interface FMResultSet : NSObject {
-    FMDatabase *parentDB;
-    FMStatement *statement;
+    FMDatabase          *_parentDB;
+    FMStatement         *_statement;
     
-    NSString *query;
-    NSMutableDictionary *columnNameToIndexMap;
-    BOOL columnNamesSetup;
+    NSString            *_query;
+    NSMutableDictionary *_columnNameToIndexMap;
 }
 
-@property (retain) NSString *query;
-@property (retain) NSMutableDictionary *columnNameToIndexMap;
-@property (retain) FMStatement *statement;
+@property (atomic, retain) NSString *query;
+@property (readonly) NSMutableDictionary *columnNameToIndexMap;
+@property (atomic, retain) FMStatement *statement;
 
 + (id)resultSetWithStatement:(FMStatement *)statement usingParentDatabase:(FMDatabase*)aDB;
 
@@ -52,6 +51,9 @@
 - (long long int)longLongIntForColumn:(NSString*)columnName;
 - (long long int)longLongIntForColumnIndex:(int)columnIdx;
 
+- (unsigned long long int)unsignedLongLongIntForColumn:(NSString*)columnName;
+- (unsigned long long int)unsignedLongLongIntForColumnIndex:(int)columnIdx;
+
 - (BOOL)boolForColumn:(NSString*)columnName;
 - (BOOL)boolForColumnIndex:(int)columnIdx;
 
@@ -74,18 +76,28 @@
 - (id)objectForColumnName:(NSString*)columnName;
 - (id)objectForColumnIndex:(int)columnIdx;
 
+- (id)objectForKeyedSubscript:(NSString *)columnName;
+- (id)objectAtIndexedSubscript:(int)columnIdx;
+
 /*
-If you are going to use this data after you iterate over the next row, or after you close the
-result set, make sure to make a copy of the data first (or just use dataForColumn:/dataForColumnIndex:)
-If you don't, you're going to be in a world of hurt when you try and use the data.
-*/
+ If you are going to use this data after you iterate over the next row, or after you close the
+ result set, make sure to make a copy of the data first (or just use dataForColumn:/dataForColumnIndex:)
+ If you don't, you're going to be in a world of hurt when you try and use the data.
+ */
 - (NSData*)dataNoCopyForColumn:(NSString*)columnName NS_RETURNS_NOT_RETAINED;
 - (NSData*)dataNoCopyForColumnIndex:(int)columnIdx NS_RETURNS_NOT_RETAINED;
 
 - (BOOL)columnIndexIsNull:(int)columnIdx;
 - (BOOL)columnIsNull:(NSString*)columnName;
 
+
+/* Returns a dictionary of the row results mapped to case sensitive keys of the column names. */
+- (NSDictionary*)resultDictionary;
+
+/* Please use resultDictionary instead.  Also, beware that resultDictionary is case sensitive! */
+- (NSDictionary*)resultDict  __attribute__ ((deprecated));
+
 - (void)kvcMagic:(id)object;
-- (NSDictionary *)resultDict;
+
 
 @end
