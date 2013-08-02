@@ -99,9 +99,9 @@
         FMDatabase *db = [self database];
         block(db);
         
-        if ([db hasOpenResultSets]) {
-            NSLog(@"Warning: there is at least one open result set around after performing [FMDatabaseQueue inDatabase:]");
-        }
+//        if ([db hasOpenResultSets]) {
+//            NSLog(@"Warning: there is at least one open result set around after performing [FMDatabaseQueue inDatabase:]");
+//        }
     });
     
     FMDBRelease(self);
