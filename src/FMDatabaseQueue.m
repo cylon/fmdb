@@ -9,6 +9,12 @@
 #import "FMDatabaseQueue.h"
 #import "FMDatabase.h"
 
+#define THREAD_ID_KEY @"FMDB_THREAD_ID"
+
+@interface FMDatabaseQueue ()
+@property (nonatomic, strong) NSString *queueUUID;
+@end
+
 /*
  
  Note: we call [self retain]; before using dispatch_sync, just incase
@@ -48,6 +54,7 @@
         _path = FMDBReturnRetained(aPath);
         
         _queue = dispatch_queue_create([[NSString stringWithFormat:@"fmdb.%@", self] UTF8String], NULL);
+        _queueUUID = FMDBReturnRetained([FMDatabaseQueue generateUniqueIdentifier]);
     }
     
     return self;
@@ -57,7 +64,7 @@
     
     FMDBRelease(_db);
     FMDBRelease(_path);
-    
+    FMDBRelease(_queueUUID);
     if (_queue) {
         FMDBDispatchQueueRelease(_queue);
         _queue = 0x00;
@@ -94,15 +101,27 @@
 
 - (void)inDatabase:(void (^)(FMDatabase *db))block {
     FMDBRetain(self);
-    dispatch_sync(_queue, ^() {
-        
+    // Check for buggy reentrant code
+    NSString *threadId = [[[NSThread currentThread] threadDictionary] objectForKey:THREAD_ID_KEY];
+    if ([_queueUUID isEqualToString:threadId])
+    {
+#ifdef DEBUG
+        NSAssert(NO, @"FMDB dispatch_sync called while already on the target queue!");
+#endif
         FMDatabase *db = [self database];
         block(db);
-        
-//        if ([db hasOpenResultSets]) {
-//            NSLog(@"Warning: there is at least one open result set around after performing [FMDatabaseQueue inDatabase:]");
-//        }
-    });
+    }
+    else {
+        dispatch_sync(_queue, ^() {
+            [[[NSThread currentThread] threadDictionary] setObject:_queueUUID forKey:THREAD_ID_KEY];
+            FMDatabase *db = [self database];
+            block(db);
+            [[[NSThread currentThread] threadDictionary] removeObjectForKey:THREAD_ID_KEY];
+//            if ([db hasOpenResultSets]) {
+//                NSLog(@"Warning: there is at least one open result set around after performing [FMDatabaseQueue inDatabase:]");
+//            }
+        });
+    }
     
     FMDBRelease(self);
 }
@@ -110,28 +129,48 @@
 
 - (void)beginTransaction:(BOOL)useDeferred withBlock:(void (^)(FMDatabase *db, BOOL *rollback))block {
     FMDBRetain(self);
-    dispatch_sync(_queue, ^() {
-        
-        BOOL shouldRollback = NO;
-        
-        if (useDeferred) {
-            [[self database] beginDeferredTransaction];
-        }
-        else {
-            [[self database] beginTransaction];
-        }
-        
-        block([self database], &shouldRollback);
-        
-        if (shouldRollback) {
-            [[self database] rollback];
-        }
-        else {
-            [[self database] commit];
-        }
-    });
+    // Check for buggy reentrant code
+    NSString *threadId = [[[NSThread currentThread] threadDictionary] objectForKey:THREAD_ID_KEY];
+    if ([_queueUUID isEqualToString:threadId])
+    {
+#ifdef DEBUG
+        NSAssert(NO, @"FMDB dispatch_sync called while already on the target queue!");
+#endif
+        FMDatabase *db = [self database];
+        [self performTransactionBlock:block withDatabase:db useDeferred:useDeferred];
+    }
+    else {
+        dispatch_sync(_queue, ^() {
+            [[[NSThread currentThread] threadDictionary] setObject:_queueUUID forKey:THREAD_ID_KEY];
+            FMDatabase *db = [self database];
+            [self performTransactionBlock:block withDatabase:db useDeferred:useDeferred];
+            [[[NSThread currentThread] threadDictionary] removeObjectForKey:THREAD_ID_KEY];
+        });
+    }
     
     FMDBRelease(self);
+}
+
+- (void)performTransactionBlock:(void (^)(FMDatabase *db, BOOL *rollback))block withDatabase:(FMDatabase *)db useDeferred:(BOOL)useDeferred
+{
+    BOOL shouldRollback = NO;
+    
+    if (useDeferred) {
+        [[self database] beginDeferredTransaction];
+    }
+    else {
+        [[self database] beginTransaction];
+    }
+    
+    block([self database], &shouldRollback);
+    
+    if (shouldRollback) {
+        [[self database] rollback];
+    }
+    else {
+        [[self database] commit];
+    }
+
 }
 
 - (void)inDeferredTransaction:(void (^)(FMDatabase *db, BOOL *rollback))block {
@@ -172,4 +211,18 @@
 }
 #endif
 
++ (NSString *)generateUniqueIdentifier
+{
+    // Make the compiler happy, we only use this under ARC anyways.
+    NSString *uuid = nil;
+    CFUUIDRef uuidCreator = CFUUIDCreate(kCFAllocatorDefault);
+    CFStringRef uuidStringRef = CFUUIDCreateString(kCFAllocatorDefault, uuidCreator);
+    CFRelease(uuidCreator);
+#if __has_feature(objc_arc)
+    uuid = (__bridge_transfer NSString *)uuidStringRef;
+#else
+    uuid = [(NSString *)uuidStringRef autorelease];
+#endif
+    return uuid;
+}
 @end
