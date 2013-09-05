@@ -110,16 +110,15 @@
 #endif
         FMDatabase *db = [self database];
         block(db);
+        [db closeOpenResultSets];
     }
     else {
         dispatch_sync(_queue, ^() {
             [[[NSThread currentThread] threadDictionary] setObject:_queueUUID forKey:THREAD_ID_KEY];
             FMDatabase *db = [self database];
             block(db);
+            [db closeOpenResultSets];
             [[[NSThread currentThread] threadDictionary] removeObjectForKey:THREAD_ID_KEY];
-//            if ([db hasOpenResultSets]) {
-//                NSLog(@"Warning: there is at least one open result set around after performing [FMDatabaseQueue inDatabase:]");
-//            }
         });
     }
     
@@ -138,12 +137,14 @@
 #endif
         FMDatabase *db = [self database];
         [self performTransactionBlock:block withDatabase:db useDeferred:useDeferred];
+        [db closeOpenResultSets];
     }
     else {
         dispatch_sync(_queue, ^() {
             [[[NSThread currentThread] threadDictionary] setObject:_queueUUID forKey:THREAD_ID_KEY];
             FMDatabase *db = [self database];
             [self performTransactionBlock:block withDatabase:db useDeferred:useDeferred];
+            [db closeOpenResultSets];
             [[[NSThread currentThread] threadDictionary] removeObjectForKey:THREAD_ID_KEY];
         });
     }
@@ -156,19 +157,19 @@
     BOOL shouldRollback = NO;
     
     if (useDeferred) {
-        [[self database] beginDeferredTransaction];
+        [db beginDeferredTransaction];
     }
     else {
-        [[self database] beginTransaction];
+        [db beginTransaction];
     }
     
-    block([self database], &shouldRollback);
+    block(db, &shouldRollback);
     
     if (shouldRollback) {
-        [[self database] rollback];
+        [db rollback];
     }
     else {
-        [[self database] commit];
+        [db commit];
     }
 
 }
@@ -193,15 +194,17 @@
         
         BOOL shouldRollback = NO;
         
-        if ([[self database] startSavePointWithName:name error:&err]) {
+        FMDatabase *db = [self database];
+        if ([db startSavePointWithName:name error:&err]) {
             
-            block([self database], &shouldRollback);
+            block(db, &shouldRollback);
+            [db closeOpenResultSets];
             
             if (shouldRollback) {
-                [[self database] rollbackToSavePointWithName:name error:&err];
+                [db rollbackToSavePointWithName:name error:&err];
             }
             else {
-                [[self database] releaseSavePointWithName:name error:&err];
+                [db releaseSavePointWithName:name error:&err];
             }
             
         }
